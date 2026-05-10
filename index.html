@@ -15,7 +15,6 @@
     .topbar { display:flex; gap:12px; flex-wrap:wrap; }
     button { border:0; border-radius:999px; padding:24px 32px; background:var(--accent); color:white; font-weight:800; cursor:pointer; font-size:1.05rem; }
     .smallbtn { padding:14px 18px; font-size:.95rem; }
-    .cheat { background: linear-gradient(135deg, #ffcc66, #ff6b6b); color: #111; }
     .grid { display:grid; grid-template-columns:1.45fr .8fr; gap:18px; }
     .panel { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; box-shadow:0 18px 40px rgba(0,0,0,.25); }
     .big { min-height:500px; }
@@ -59,7 +58,6 @@
         <button class="smallbtn" id="saveBtn">Save</button>
         <button class="smallbtn" id="exportBtn">Export Save</button>
         <button class="smallbtn" id="importBtn">Import Save</button>
-        <button class="smallbtn cheat" id="cheatBtn">Cheat +1,000,000</button>
         <button class="smallbtn" id="resetBtn">Reset</button>
       </div>
     </section>
@@ -146,16 +144,15 @@
       research: 0,
       starPower: 0,
       log: [],
-      eventText: 'No event yet.',
-      cursorCount: 0
+      eventText: 'No event yet.'
     };
 
     const upgrades = [
-      { id:'cursor', name:'Crystal Cursor', desc:'Each click gives +1 more crystal.', baseCost:10, cost(){ return Math.ceil(this.baseCost * Math.pow(1.3, state.cursorCount)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.clickPower += 1; state.cursorCount += 1; addLog('Bought Crystal Cursor.'); } },
-      { id:'miner', name:'Auto Miner', desc:'Produces 1 crystal per second.', baseCost:25, cost(){ return Math.ceil(this.baseCost * Math.pow(1.3, state.autoMiners)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.autoMiners += 1; addLog('Auto Miner online.'); } },
-      { id:'forge', name:'Crystal Forge', desc:'Boosts auto production by +4 cps.', baseCost:120, cost(){ return Math.ceil(this.baseCost * Math.pow(1.3, state.crystalForges)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.crystalForges += 1; addLog('Crystal Forge built.'); } },
-      { id:'beacon', name:'Nebula Beacon', desc:'Adds a huge +20 cps burst.', baseCost:600, cost(){ return Math.ceil(this.baseCost * Math.pow(1.3, state.nebulaBeacons)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.nebulaBeacons += 1; addLog('Nebula Beacon activated.'); } },
-      { id:'lab', name:'Research Lab', desc:'Generates research and small cps.', baseCost:250, cost(){ return Math.ceil(this.baseCost * Math.pow(1.3, state.research)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.research += 1; addLog('Research Lab expanded.'); } }
+      { id:'cursor', name:'Crystal Cursor', desc:'Each click gives +1 more crystal.', baseCost:10, cost(){ return Math.floor(this.baseCost * Math.pow(1.18, state.clickPower - 1)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.clickPower += 1; addLog('Bought Crystal Cursor.'); } },
+      { id:'miner', name:'Auto Miner', desc:'Produces 1 crystal per second.', baseCost:25, cost(){ return Math.floor(this.baseCost * Math.pow(1.22, state.autoMiners)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.autoMiners += 1; addLog('Auto Miner online.'); } },
+      { id:'forge', name:'Crystal Forge', desc:'Boosts auto production by +4 cps.', baseCost:120, cost(){ return Math.floor(this.baseCost * Math.pow(1.25, state.crystalForges)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.crystalForges += 1; addLog('Crystal Forge built.'); } },
+      { id:'beacon', name:'Nebula Beacon', desc:'Adds a huge +20 cps burst.', baseCost:600, cost(){ return Math.floor(this.baseCost * Math.pow(1.3, state.nebulaBeacons)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.nebulaBeacons += 1; addLog('Nebula Beacon activated.'); } },
+      { id:'lab', name:'Research Lab', desc:'Generates research and small cps.', baseCost:250, cost(){ return Math.floor(this.baseCost * Math.pow(1.28, state.research)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.research += 1; state.cps += 2; addLog('Research Lab expanded.'); } }
     ];
 
     const milestones = [
@@ -208,7 +205,6 @@
             <span>Cost: <b>${format(u.cost())}</b></span>
             <button type="button" ${u.canBuy() ? '' : 'disabled'}>Buy</button>
           </div>
-          <p class="tiny">${u.id === 'cursor' ? `${state.cursorCount} crystal cursors owned` : ''}</p>
         `;
         const btn = card.querySelector('button');
         btn.addEventListener('click', () => {
@@ -252,3 +248,121 @@
       render();
       save();
     }
+
+    function storageUpgrade() {
+      const cost = 150 + (state.storageLevel * 200);
+      if (state.crystals < cost) return;
+      state.crystals -= cost;
+      state.storageLevel += 1;
+      addLog('Storage expanded.');
+      render();
+      save();
+    }
+
+    function prestige() {
+      if (state.crystals < 2000) return;
+      const gained = Math.floor(state.crystals / 2000);
+      state.stars += gained;
+      state.starPower += gained;
+      state.crystals = 0;
+      state.clicks = 0;
+      state.clickPower = 1 + state.starPower;
+      state.autoMiners = 0;
+      state.crystalForges = 0;
+      state.nebulaBeacons = 0;
+      state.research = 0;
+      state.storageLevel = 0;
+      state.storageCap = 100;
+      state.eventText = `Prestige complete! Gained ${gained} stars.`;
+      addLog(`Prestige reset. +${gained} stars.`);
+      render();
+      save();
+    }
+
+    function researchStars() {
+      const cost = 300 + (state.research * 120);
+      if (state.crystals < cost) return;
+      state.crystals -= cost;
+      state.research += 1;
+      state.starPower += 1;
+      state.eventText = 'Research complete. Your stars feel stronger.';
+      addLog('Studied the stars.');
+      render();
+      save();
+    }
+
+    function randomEvent() {
+      const roll = Math.random();
+      if (roll < 0.2) {
+        const bonus = 50 + Math.floor(Math.random() * 100);
+        state.crystals = Math.min(state.storageCap, state.crystals + bonus);
+        state.eventText = `Comet shower! +${bonus} crystals.`;
+        addLog(`Event: comet shower (+${bonus}).`);
+      } else if (roll < 0.35) {
+        state.cps += 5;
+        state.eventText = 'Solar flare! +5 cps for a while.';
+        addLog('Event: solar flare.');
+      } else if (roll < 0.45) {
+        const loss = Math.min(state.crystals, 40 + Math.floor(Math.random() * 80));
+        state.crystals -= loss;
+        state.eventText = `Space dust eats a bit of your stock. -${loss} crystals.`;
+        addLog(`Event: dust storm (-${loss}).`);
+      } else {
+        state.eventText = 'Quiet space. Nothing weird happened.';
+      }
+      clampStorage();
+      render();
+      save();
+    }
+
+    function save(){ localStorage.setItem('starGardenIdleSave', JSON.stringify(state)); }
+    function load(){
+      const raw = localStorage.getItem('starGardenIdleSave');
+      if (!raw) return;
+      try { Object.assign(state, JSON.parse(raw)); } catch (e) {}
+    }
+    function reset(){ localStorage.removeItem('starGardenIdleSave'); location.reload(); }
+    function exportSave(){
+      const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      prompt('Copy your save code:', data);
+    }
+    function importSave(){
+      const code = prompt('Paste your save code:');
+      if (!code) return;
+      try {
+        const json = decodeURIComponent(escape(atob(code)));
+        Object.assign(state, JSON.parse(json));
+        addLog('Save imported.');
+        render();
+        save();
+      } catch (e) {
+        alert('Bad save code.');
+      }
+    }
+
+    load();
+    render();
+    setInterval(() => { computeCps(); state.crystals += state.cps / 10; clampStorage(); render(); }, 100);
+    setInterval(() => { if (Math.random() < 0.08) randomEvent(); }, 8000);
+    setInterval(() => save(), 5000);
+
+    document.getElementById('mineBtn').addEventListener('click', mine);
+    document.getElementById('saveBtn').addEventListener('click', save);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+    document.getElementById('storageBtn').addEventListener('click', storageUpgrade);
+    document.getElementById('prestigeBtn').addEventListener('click', prestige);
+    document.getElementById('researchBtn').addEventListener('click', researchStars);
+    document.getElementById('exportBtn').addEventListener('click', exportSave);
+    document.getElementById('importBtn').addEventListener('click', importSave);
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tabpane').forEach(p => p.style.display = 'none');
+        document.getElementById('tab-' + tab.dataset.tab).style.display = '';
+      });
+    });
+  </script>
+</body>
+</html>
