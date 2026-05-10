@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -42,7 +43,6 @@
     .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .bar { width:100%; height:14px; background:#12152b; border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
     .fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2)); width:0%; }
-    .resourceLine { display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; }
     .tiny { color:var(--muted); font-size:.9rem; }
     .logItem { font-size:.92rem; color:var(--muted); }
     @media (max-width:900px) { .hero, .grid, .row2 { grid-template-columns:1fr; } }
@@ -59,6 +59,7 @@
         <button class="smallbtn" id="saveBtn">Save</button>
         <button class="smallbtn" id="exportBtn">Export Save</button>
         <button class="smallbtn" id="importBtn">Import Save</button>
+        <button class="smallbtn cheat" id="cheatBtn">Cheat +1,000,000</button>
         <button class="smallbtn" id="resetBtn">Reset</button>
       </div>
     </section>
@@ -91,6 +92,7 @@
             <div class="card">
               <h3>Storage</h3>
               <p>Cap: <b id="storageCap">100</b></p>
+              <p>Used: <b id="storageUsed">0</b></p>
               <div class="bar"><div id="storageFill" class="fill"></div></div>
               <p class="tiny">Upgrade storage to prevent overfilling when offline.</p>
               <button class="smallbtn" id="storageBtn">Expand Storage</button>
@@ -129,7 +131,7 @@
       </aside>
     </section>
   </main>
-**Part 2/3**
+  **Part 2/2**
 ```html
   <script>
     const state = {
@@ -192,6 +194,7 @@
       document.getElementById('stars').textContent = format(state.stars);
       document.getElementById('research').textContent = format(state.research);
       document.getElementById('storageCap').textContent = format(state.storageCap);
+      document.getElementById('storageUsed').textContent = format(state.crystals);
       document.getElementById('storageFill').style.width = Math.min(100, (state.crystals / state.storageCap) * 100) + '%';
       document.getElementById('eventText').textContent = state.eventText;
 
@@ -315,10 +318,7 @@
       render();
       save();
     }
-  </script>
-**Part 3/3**
-```html
-  <script>
+
     function save(){ localStorage.setItem('starGardenIdleSave', JSON.stringify(state)); }
     function load(){
       const raw = localStorage.getItem('starGardenIdleSave');
@@ -344,6 +344,13 @@
       }
     }
 
+    function cheat() {
+      state.crystals += 1000000;
+      addLog('Cheat activated: +1,000,000 crystals.');
+      render();
+      save();
+    }
+
     load();
     render();
     setInterval(() => { computeCps(); state.crystals += state.cps / 10; clampStorage(); render(); }, 100);
@@ -358,6 +365,7 @@
     document.getElementById('researchBtn').addEventListener('click', researchStars);
     document.getElementById('exportBtn').addEventListener('click', exportSave);
     document.getElementById('importBtn').addEventListener('click', importSave);
+    document.getElementById('cheatBtn').addEventListener('click', cheat);
 
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -370,6 +378,3 @@
   </script>
 </body>
 </html>
-```
-
-If you want, I can also make this into a **cleaner 2-part version** that’s easier to paste without all the extra HTML.
