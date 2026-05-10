@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,26 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Star Garden Idle</title>
   <style>
-    :root { --bg:#0e1020; --panel:#171a33; --panel2:#202447; --text:#f5f7ff; --muted:#a7afd6; --accent:#7d7bff; --accent2:#38d7b8; --good:#53e07d; --bad:#ff6b6b; }
+    :root { --bg:#0e1020; --panel:#171a33; --panel2:#202447; --text:#f5f7ff; --muted:#a7afd6; --accent:#7d7bff; --accent2:#38d7b8; --good:#53e07d; --bad:#ff6b6b; --warn:#ffcc66; }
     * { box-sizing: border-box; }
     body { margin:0; font-family:system-ui,sans-serif; background:radial-gradient(circle at top, #1d2140, var(--bg)); color:var(--text); }
-    .wrap { max-width:1100px; margin:0 auto; padding:20px; }
+    .wrap { max-width:1200px; margin:0 auto; padding:20px; }
     .hero { display:flex; justify-content:space-between; gap:20px; align-items:start; margin-bottom:18px; }
     h1 { margin:0 0 8px; font-size:clamp(2rem, 4vw, 3.5rem); }
     p { color:var(--muted); line-height:1.5; }
-    .topbar { display:flex; gap:10px; flex-wrap:wrap; }
-    button { border:0; border-radius:999px; padding:12px 16px; background:var(--accent); color:white; font-weight:700; cursor:pointer; }
-    .grid { display:grid; grid-template-columns:1.4fr .8fr; gap:18px; }
+    .topbar { display:flex; gap:12px; flex-wrap:wrap; }
+    button { border:0; border-radius:999px; padding:24px 32px; background:var(--accent); color:white; font-weight:800; cursor:pointer; font-size:1.05rem; }
+    .smallbtn { padding:14px 18px; font-size:.95rem; }
+    .grid { display:grid; grid-template-columns:1.45fr .8fr; gap:18px; }
     .panel { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; box-shadow:0 18px 40px rgba(0,0,0,.25); }
     .big { min-height:500px; }
     .statRow { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
     .stat { background:rgba(255,255,255,.05); border-radius:16px; padding:14px; text-align:center; }
     .stat span { display:block; color:var(--muted); font-size:.9rem; }
     .stat b { font-size:1.5rem; }
-    .mine { width:100%; padding:18px; font-size:1.2rem; background:linear-gradient(135deg, var(--accent), var(--accent2)); margin:8px 0 10px; }
+    .mine { width:100%; padding:26px; font-size:1.4rem; background:linear-gradient(135deg, var(--accent), var(--accent2)); margin:8px 0 10px; }
     .hint { margin-top:4px; }
-    .sectionTitle { margin-top:18px; }
-    .upgrades, .milestones { display:grid; gap:12px; }
+    .sectionTitle { margin-top:18px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .sectionTitle h2, .sectionTitle h3 { margin:0; }
+    .upgrades, .milestones, .log { display:grid; gap:12px; }
     .card { background:rgba(255,255,255,.05); border-radius:14px; padding:14px; border:1px solid rgba(255,255,255,.06); }
     .card h3 { margin:0 0 6px; }
     .card p { margin:0 0 10px; }
@@ -34,7 +35,17 @@
     .card button:disabled { opacity:.5; cursor:not-allowed; }
     .good { color:var(--good); }
     .bad { color:var(--bad); }
-    @media (max-width:900px) { .hero, .grid { grid-template-columns:1fr; } }
+    .warn { color:var(--warn); }
+    .tabs { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0 12px; }
+    .tab { padding:12px 16px; border-radius:999px; background:rgba(255,255,255,.08); cursor:pointer; user-select:none; font-weight:700; }
+    .tab.active { background:var(--accent); }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .bar { width:100%; height:14px; background:#12152b; border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,.08); }
+    .fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2)); width:0%; }
+    .resourceLine { display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; }
+    .tiny { color:var(--muted); font-size:.9rem; }
+    .logItem { font-size:.92rem; color:var(--muted); }
+    @media (max-width:900px) { .hero, .grid, .row2 { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -45,8 +56,10 @@
         <p>Grow cosmic crystals, buy upgrades, and watch your little galaxy print resources while you chill.</p>
       </div>
       <div class="topbar">
-        <button id="saveBtn">Save</button>
-        <button id="resetBtn">Reset</button>
+        <button class="smallbtn" id="saveBtn">Save</button>
+        <button class="smallbtn" id="exportBtn">Export Save</button>
+        <button class="smallbtn" id="importBtn">Import Save</button>
+        <button class="smallbtn" id="resetBtn">Reset</button>
       </div>
     </section>
 
@@ -61,8 +74,53 @@
         <button id="mineBtn" class="mine">Mine Crystal</button>
         <p class="hint">Click to gain crystals. Buy upgrades to automate the work.</p>
 
-        <div class="sectionTitle"><h2>Upgrades</h2></div>
-        <div id="upgrades" class="upgrades"></div>
+        <div class="tabs">
+          <div class="tab active" data-tab="upgrades">Upgrades</div>
+          <div class="tab" data-tab="systems">Systems</div>
+          <div class="tab" data-tab="log">Log</div>
+        </div>
+
+        <div id="tab-upgrades" class="tabpane">
+          <div class="sectionTitle"><h2>Upgrades</h2><span>More power, more stuff</span></div>
+          <div id="upgrades" class="upgrades"></div>
+        </div>
+
+        <div id="tab-systems" class="tabpane" style="display:none;">
+          <div class="sectionTitle"><h2>Systems</h2><span>Production, storage, and prestige</span></div>
+          <div class="row2">
+            <div class="card">
+              <h3>Storage</h3>
+              <p>Cap: <b id="storageCap">100</b></p>
+              <div class="bar"><div id="storageFill" class="fill"></div></div>
+              <p class="tiny">Upgrade storage to prevent overfilling when offline.</p>
+              <button class="smallbtn" id="storageBtn">Expand Storage</button>
+            </div>
+            <div class="card">
+              <h3>Prestige</h3>
+              <p>Stars: <b id="stars">0</b></p>
+              <p class="tiny">Reset for star shards that boost all production forever.</p>
+              <button class="smallbtn" id="prestigeBtn">Prestige</button>
+            </div>
+          </div>
+          <div class="row2" style="margin-top:14px;">
+            <div class="card">
+              <h3>Research</h3>
+              <p>Research points: <b id="research">0</b></p>
+              <p class="tiny">Research unlocks stronger upgrades and passive bonuses.</p>
+              <button class="smallbtn" id="researchBtn">Study the Stars</button>
+            </div>
+            <div class="card">
+              <h3>Events</h3>
+              <p id="eventText" class="warn">No event yet.</p>
+              <p class="tiny">Random events can help or hinder you. Bit of chaos, good vibes.</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-log" class="tabpane" style="display:none;">
+          <div class="sectionTitle"><h2>Activity Log</h2><span>Latest actions</span></div>
+          <div id="log" class="log"></div>
+        </div>
       </div>
 
       <aside class="panel">
@@ -71,15 +129,32 @@
       </aside>
     </section>
   </main>
-
+**Part 2/3**
+```html
   <script>
-    const state = { crystals:0, clicks:0, clickPower:1, cps:0, autoMiners:0, crystalForges:0, nebulaBeacons:0, lastSave:Date.now() };
+    const state = {
+      crystals: 0,
+      clicks: 0,
+      clickPower: 1,
+      cps: 0,
+      autoMiners: 0,
+      crystalForges: 0,
+      nebulaBeacons: 0,
+      storageLevel: 0,
+      storageCap: 100,
+      stars: 0,
+      research: 0,
+      starPower: 0,
+      log: [],
+      eventText: 'No event yet.'
+    };
 
     const upgrades = [
-      { id:'cursor', name:'Crystal Cursor', desc:'Each click gives +1 more crystal.', baseCost:10, cost(){ return Math.floor(this.baseCost * Math.pow(1.18, state.clickPower - 1)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.clickPower += 1; } },
-      { id:'miner', name:'Auto Miner', desc:'Produces 1 crystal per second.', baseCost:25, cost(){ return Math.floor(this.baseCost * Math.pow(1.22, state.autoMiners)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.autoMiners += 1; } },
-      { id:'forge', name:'Crystal Forge', desc:'Boosts auto production by +4 cps.', baseCost:120, cost(){ return Math.floor(this.baseCost * Math.pow(1.25, state.crystalForges)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.crystalForges += 1; } },
-      { id:'beacon', name:'Nebula Beacon', desc:'Adds a huge +20 cps burst.', baseCost:600, cost(){ return Math.floor(this.baseCost * Math.pow(1.3, state.nebulaBeacons)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.nebulaBeacons += 1; } }
+      { id:'cursor', name:'Crystal Cursor', desc:'Each click gives +1 more crystal.', baseCost:10, cost(){ return Math.floor(this.baseCost * Math.pow(1.18, state.clickPower - 1)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.clickPower += 1; addLog('Bought Crystal Cursor.'); } },
+      { id:'miner', name:'Auto Miner', desc:'Produces 1 crystal per second.', baseCost:25, cost(){ return Math.floor(this.baseCost * Math.pow(1.22, state.autoMiners)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.autoMiners += 1; addLog('Auto Miner online.'); } },
+      { id:'forge', name:'Crystal Forge', desc:'Boosts auto production by +4 cps.', baseCost:120, cost(){ return Math.floor(this.baseCost * Math.pow(1.25, state.crystalForges)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.crystalForges += 1; addLog('Crystal Forge built.'); } },
+      { id:'beacon', name:'Nebula Beacon', desc:'Adds a huge +20 cps burst.', baseCost:600, cost(){ return Math.floor(this.baseCost * Math.pow(1.3, state.nebulaBeacons)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.nebulaBeacons += 1; addLog('Nebula Beacon activated.'); } },
+      { id:'lab', name:'Research Lab', desc:'Generates research and small cps.', baseCost:250, cost(){ return Math.floor(this.baseCost * Math.pow(1.28, state.research)); }, canBuy(){ return state.crystals >= this.cost(); }, buy(){ state.crystals -= this.cost(); state.research += 1; state.cps += 2; addLog('Research Lab expanded.'); } }
     ];
 
     const milestones = [
@@ -87,13 +162,26 @@
       { label:'Own 3 auto miners', check:() => state.autoMiners >= 3 },
       { label:'Own 2 crystal forges', check:() => state.crystalForges >= 2 },
       { label:'Reach 1,000 crystals', check:() => state.crystals >= 1000 },
-      { label:'Reach 10 cps', check:() => state.cps >= 10 }
+      { label:'Reach 10 cps', check:() => state.cps >= 10 },
+      { label:'Prestige once', check:() => state.stars >= 1 }
     ];
 
     const upgradesEl = document.getElementById('upgrades');
     const milestonesEl = document.getElementById('milestones');
+    const logEl = document.getElementById('log');
 
-    function computeCps(){ state.cps = (state.autoMiners * 1) + (state.crystalForges * 4) + (state.nebulaBeacons * 20); }
+    function addLog(msg) {
+      state.log.unshift(`[${new Date().toLocaleTimeString()}] ${msg}`);
+      state.log = state.log.slice(0, 10);
+      renderLog();
+    }
+
+    function computeCps(){
+      const starBonus = 1 + (state.stars * 0.15) + (state.starPower * 0.05);
+      state.storageCap = 100 + (state.storageLevel * 150);
+      state.cps = ((state.autoMiners * 1) + (state.crystalForges * 4) + (state.nebulaBeacons * 20) + (state.research * 2)) * starBonus;
+    }
+
     function format(n){ return Math.floor(n).toLocaleString(); }
 
     function render(){
@@ -101,6 +189,11 @@
       document.getElementById('crystals').textContent = format(state.crystals);
       document.getElementById('cps').textContent = format(state.cps);
       document.getElementById('clicks').textContent = format(state.clicks);
+      document.getElementById('stars').textContent = format(state.stars);
+      document.getElementById('research').textContent = format(state.research);
+      document.getElementById('storageCap').textContent = format(state.storageCap);
+      document.getElementById('storageFill').style.width = Math.min(100, (state.crystals / state.storageCap) * 100) + '%';
+      document.getElementById('eventText').textContent = state.eventText;
 
       upgradesEl.innerHTML = '';
       for (const u of upgrades) {
@@ -118,6 +211,7 @@
         btn.addEventListener('click', () => {
           if (!u.canBuy()) return;
           u.buy();
+          clampStorage();
           render();
           save();
         });
@@ -136,9 +230,95 @@
         `;
         milestonesEl.appendChild(card);
       }
+
+      renderLog();
     }
 
-    function mine(){ state.crystals += state.clickPower; state.clicks += 1; render(); }
+    function renderLog() {
+      logEl.innerHTML = state.log.map(line => `<div class="logItem">${line}</div>`).join('') || '<div class="logItem">No actions yet.</div>';
+    }
+
+    function clampStorage() {
+      if (state.crystals > state.storageCap) state.crystals = state.storageCap;
+    }
+
+    function mine(){
+      state.crystals += state.clickPower;
+      state.clicks += 1;
+      clampStorage();
+      render();
+      save();
+    }
+
+    function storageUpgrade() {
+      const cost = 150 + (state.storageLevel * 200);
+      if (state.crystals < cost) return;
+      state.crystals -= cost;
+      state.storageLevel += 1;
+      addLog('Storage expanded.');
+      render();
+      save();
+    }
+
+    function prestige() {
+      if (state.crystals < 2000) return;
+      const gained = Math.floor(state.crystals / 2000);
+      state.stars += gained;
+      state.starPower += gained;
+      state.crystals = 0;
+      state.clicks = 0;
+      state.clickPower = 1 + state.starPower;
+      state.autoMiners = 0;
+      state.crystalForges = 0;
+      state.nebulaBeacons = 0;
+      state.research = 0;
+      state.storageLevel = 0;
+      state.storageCap = 100;
+      state.eventText = `Prestige complete! Gained ${gained} stars.`;
+      addLog(`Prestige reset. +${gained} stars.`);
+      render();
+      save();
+    }
+
+    function researchStars() {
+      const cost = 300 + (state.research * 120);
+      if (state.crystals < cost) return;
+      state.crystals -= cost;
+      state.research += 1;
+      state.starPower += 1;
+      state.eventText = 'Research complete. Your stars feel stronger.';
+      addLog('Studied the stars.');
+      render();
+      save();
+    }
+
+    function randomEvent() {
+      const roll = Math.random();
+      if (roll < 0.2) {
+        const bonus = 50 + Math.floor(Math.random() * 100);
+        state.crystals = Math.min(state.storageCap, state.crystals + bonus);
+        state.eventText = `Comet shower! +${bonus} crystals.`;
+        addLog(`Event: comet shower (+${bonus}).`);
+      } else if (roll < 0.35) {
+        state.cps += 5;
+        state.eventText = 'Solar flare! +5 cps for a while.';
+        addLog('Event: solar flare.');
+      } else if (roll < 0.45) {
+        const loss = Math.min(state.crystals, 40 + Math.floor(Math.random() * 80));
+        state.crystals -= loss;
+        state.eventText = `Space dust eats a bit of your stock. -${loss} crystals.`;
+        addLog(`Event: dust storm (-${loss}).`);
+      } else {
+        state.eventText = 'Quiet space. Nothing weird happened.';
+      }
+      clampStorage();
+      render();
+      save();
+    }
+  </script>
+**Part 3/3**
+```html
+  <script>
     function save(){ localStorage.setItem('starGardenIdleSave', JSON.stringify(state)); }
     function load(){
       const raw = localStorage.getItem('starGardenIdleSave');
@@ -146,18 +326,50 @@
       try { Object.assign(state, JSON.parse(raw)); } catch (e) {}
     }
     function reset(){ localStorage.removeItem('starGardenIdleSave'); location.reload(); }
+    function exportSave(){
+      const data = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      prompt('Copy your save code:', data);
+    }
+    function importSave(){
+      const code = prompt('Paste your save code:');
+      if (!code) return;
+      try {
+        const json = decodeURIComponent(escape(atob(code)));
+        Object.assign(state, JSON.parse(json));
+        addLog('Save imported.');
+        render();
+        save();
+      } catch (e) {
+        alert('Bad save code.');
+      }
+    }
 
     load();
     render();
-    setInterval(() => { computeCps(); state.crystals += state.cps / 10; render(); }, 100);
+    setInterval(() => { computeCps(); state.crystals += state.cps / 10; clampStorage(); render(); }, 100);
+    setInterval(() => { if (Math.random() < 0.08) randomEvent(); }, 8000);
     setInterval(() => save(), 5000);
 
     document.getElementById('mineBtn').addEventListener('click', mine);
     document.getElementById('saveBtn').addEventListener('click', save);
     document.getElementById('resetBtn').addEventListener('click', reset);
+    document.getElementById('storageBtn').addEventListener('click', storageUpgrade);
+    document.getElementById('prestigeBtn').addEventListener('click', prestige);
+    document.getElementById('researchBtn').addEventListener('click', researchStars);
+    document.getElementById('exportBtn').addEventListener('click', exportSave);
+    document.getElementById('importBtn').addEventListener('click', importSave);
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tabpane').forEach(p => p.style.display = 'none');
+        document.getElementById('tab-' + tab.dataset.tab).style.display = '';
+      });
+    });
   </script>
 </body>
 </html>
+```
 
-
-
+If you want, I can also make this into a **cleaner 2-part version** that’s easier to paste without all the extra HTML.
