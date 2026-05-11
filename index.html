@@ -3,7 +3,6 @@
 <head>
  <meta charset="utf-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1" />
- <meta name="viewport" content="width=device-width, initial-scale=1" />
  <title>Star Garden Idle</title>
  <style>
  :root { --bg:#0e1020; --panel:#171a33; --panel2:#202447; --text:#f5f7ff; --muted:#a7afd6; --accent:#7d7bff; --accent2:#38d7b8; --good:#53e07d; --bad:#ff6b6b; --warn:#ffcc66; }
@@ -119,8 +118,7 @@
  </div>
  </div>
 
- <div id="tab-log" class="tabpane"
- style="display:none;">
+ <div id="tab-log" class="tabpane" style="display:none;">
  <div class="sectionTitle"><h2>Activity Log</h2><span>Latest actions</span></div>
  <div id="log" class="log"></div>
  </div>
@@ -170,8 +168,7 @@
 
  const upgradesEl = document.getElementById('upgrades');
  const milestonesEl = document.getElementById('milestones');
- const logEl = document.getElementById('log');
-
+ const logEl = document.getElementById('log')
  function addLog(msg) {
  state.log.unshift(`[${new Date().toLocaleTimeString()}] ${msg}`);
  state.log = state.log.slice(0, 10);
@@ -210,13 +207,7 @@
  </div>
  `;
  const btn = card.querySelector('button');
- btn.addEventListener('click', () => {
- if (!u.canBuy()) return;
- u.buy();
- clampStorage();
- render();
- save();
- });
+ btn.addEventListener('click', () => buyUpgrade(u));
  upgradesEl.appendChild(card);
  }
 
@@ -247,6 +238,14 @@
  function mine(){
  state.crystals += state.clickPower;
  state.clicks += 1;
+ clampStorage();
+ render();
+ save();
+ }
+
+ function buyUpgrade(u) {
+ if (!u.canBuy()) return;
+ u.buy();
  clampStorage();
  render();
  save();
